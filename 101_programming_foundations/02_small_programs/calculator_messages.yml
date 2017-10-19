@@ -1,0 +1,18 @@
+# calculator_messages.yml
+# Calculator messages file for Calculator
+# program from Lesson 2: Small Programs
+# Small Problems exercises from LaunchSchool
+en:
+  welcome: "Welcome to the Calculator!"
+  valid_name: "Please enter your name: "
+  name_error: "Please enter your name..."
+  valid_number: "Please give me a number:"
+  number_error: "Hmm... Please enter a valid number..."
+  operator_error: "Please enter 1, 2, 3 or 4..."
+  valid_operator: "What operation would you like to perform?\n
+    1) add\n
+    2) subtract\n
+    3) multiply\n
+    4) divide"
+  result: "The result is..."
+  rerun_message: "Would you like to do another calculation? (Type y)"
