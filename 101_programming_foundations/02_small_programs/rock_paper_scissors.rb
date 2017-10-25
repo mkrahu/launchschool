@@ -25,7 +25,6 @@ def win?(first, second)
   WIN_HASH[first].include?(second)
 end
 
-
 prompt('Welcome to the Rock, Paper, Scissors, Lizard, Spock game!')
 prompt('We will play to see who gets to five first!')
 
@@ -34,7 +33,7 @@ computer_score = 0
 
 loop do
   prompt("Please enter (r)ock, (p)aper, (sc)issors, (l)zard or (sp)ock:")
-  
+
   choice = ''
 
   loop do
@@ -62,9 +61,8 @@ loop do
     prompt('You tied this round!')
   end
 
-
   if player_score < 5 && computer_score < 5
-    prompt("Your score is now: #{player_score}")  
+    prompt("Your score is now: #{player_score}")
     prompt("Computer score is now: #{computer_score}")
     next
   elsif player_score == 5
