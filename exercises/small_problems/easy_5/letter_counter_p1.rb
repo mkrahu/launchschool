@@ -7,7 +7,7 @@ def word_sizes(str)
   str.split.each do |word|
     word_counter[word.length] += 1
   end
-  p word_counter.sort.to_h
+  word_counter.sort.to_h
 end
 
-word_sizes('Four score and seven.')
+p word_sizes('Four score and seven.')
