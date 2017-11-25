@@ -5,7 +5,7 @@
 def substrings_at_start(str)
   substr_arr = []
   1.upto(str.length) do |n|
-    substr_arr << str.slice(0,n)
+    substr_arr << str.slice(0, n)
   end
   substr_arr
 end
@@ -19,7 +19,7 @@ def substrings(str)
 end
 
 p substrings('abcde') == [
-  'a', 'ab', 'abc', 'abcd', 'abcde', 
+  'a', 'ab', 'abc', 'abcd', 'abcde',
   'b', 'bc', 'bcd', 'bcde',
   'c', 'cd', 'cde',
   'd', 'de',

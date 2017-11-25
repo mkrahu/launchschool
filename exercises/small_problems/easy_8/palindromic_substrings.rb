@@ -5,7 +5,7 @@
 def substrings_at_start(str)
   substr_arr = []
   1.upto(str.length) do |n|
-    substr_arr << str.slice(0,n)
+    substr_arr << str.slice(0, n)
   end
   substr_arr
 end
@@ -19,7 +19,7 @@ def substrings(str)
 end
 
 def palindromes(str)
-  substrings(str).select { |str| str.length > 1 && str == str.reverse }
+  substrings(str).select { |s| s.length > 1 && s == s.reverse }
 end
 
 p palindromes('abcd') == []
@@ -36,9 +36,9 @@ p palindromes('knitting cassettes') == [
 # Further exploration
 
 def palindromes2(str)
-  substrings(str).select do |str|
-    str.delete('^0-9a-z').length > 1 && 
-    str.downcase.delete('^0-9a-z') == str.downcase.delete('^0-9a-z').reverse
+  substrings(str).select do |s|
+    s.delete('^0-9a-z').length > 1 &&
+      s.downcase.delete('^0-9a-z') == s.downcase.delete('^0-9a-z').reverse
   end
 end
 
