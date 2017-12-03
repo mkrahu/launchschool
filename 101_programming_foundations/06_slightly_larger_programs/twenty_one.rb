@@ -1,8 +1,8 @@
 require 'pry'
 
-SUITS = [ 'H', 'C', 'S', 'D' ]
-CARDS = [ 'Ace', 'King', 'Queen', 'Jack', '10', '9',
-         '8', '7', '6', '5', '4', '3', '2' ]
+SUITS = ['H', 'C', 'S', 'D']
+CARDS = ['Ace', 'King', 'Queen', 'Jack', '10', '9',
+         '8', '7', '6', '5', '4', '3', '2']
 VALUES = { 'Ace' => 11, 'King' => 10, 'Queen' => 10, 'Jack' => 10,
            '10' => 10, '9' => 9, '8' => 8, '7' => 7, '6' => 6,
            '5' => 5, '4' => 4, '3' => 3, '2' => 2 }
@@ -26,7 +26,7 @@ end
 
 def calculate_total(hand)
   cards = []
-  
+
   hand.each do |card|
     cards << card[1]
   end
@@ -46,17 +46,17 @@ def bust?(hand)
   calculate_total(hand) > 21
 end
 
-def deal(player,deck)
+def deal(player, deck)
   HANDS[player] << deck.pop
 end
 
 def display_hand(hand)
-  "#{hand.map { |card| card[1] }[0..-2].join(", ")}" + " and #{hand[-1][1]}"
+  hand.map { |card| card[1] }[0..-2].join(', ') + " and #{hand[-1][1]}"
 end
 
 def dealer_plays(deck)
   until calculate_total(HANDS[:dealer]) >= 17
-    deal(:dealer,deck)
+    deal(:dealer, deck)
   end
 end
 
@@ -71,16 +71,17 @@ def calculate_winner
 end
 
 def display_winner(winner)
-  puts "Dealer had #{display_hand(HANDS[:dealer])}, you had #{display_hand(HANDS[:player])}"
+  puts "Dealer had #{display_hand(HANDS[:dealer])}," \
+       " you had #{display_hand(HANDS[:player])}"
   case winner
-    when "Player" 
-      puts "You won!"
-      puts "Dealer: #{calculate_total(HANDS[:dealer])}, Player: #{calculate_total(HANDS[:player])}"
-    when "Dealer" 
-      puts "You lost..."
-      puts "Dealer: #{calculate_total(HANDS[:dealer])}, Player: #{calculate_total(HANDS[:player])}"
-    when "Push" 
-      puts "It's a push."
+  when "Player"
+    puts "You won!"
+    puts "Dealer: #{calculate_total(HANDS[:dealer])}, Player: #{calculate_total(HANDS[:player])}"
+  when "Dealer"
+    puts "You lost..."
+    puts "Dealer: #{calculate_total(HANDS[:dealer])}, Player: #{calculate_total(HANDS[:player])}"
+  when "Push"
+    puts "It's a push."
   end
 end
 
@@ -102,6 +103,8 @@ loop do
     break if bust?(HANDS[:player])
   end
 
+  dealer_plays(deck)
+
   if bust?(HANDS[:player])
     puts "You busted..."
     puts "#{display_hand(HANDS[:player])} is #{calculate_total(HANDS[:player])}"
@@ -114,8 +117,8 @@ loop do
       display_winner(winner)
     end
   end
-    puts "Play again? (y/n)"
-    answer = $stdin.gets.chomp.downcase
-    break unless answer.start_with?('y')
-end
 
+  puts "Play again? (y/n)"
+  answer = $stdin.gets.chomp.downcase
+  break unless answer.start_with?('y')
+end
