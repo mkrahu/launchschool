@@ -8,20 +8,12 @@ VALUES = { 'Ace' => 11, 'King' => 10, 'Queen' => 10, 'Jack' => 10,
            '5' => 5, '4' => 4, '3' => 3, '2' => 2 }
 
 HANDS = { player: [], dealer: [] }
+PLAY_TO = 21
+DEALER_MUST_GET = 17
+ROUNDS_TO_WIN = 5
 
 def shuffle_deck
-  deck = []
-  SUITS.each do |suit|
-    CARDS.each do |card|
-      deck << [suit, card]
-    end
-  end
-  deck.shuffle!
-end
-
-def clear_hands
-  HANDS[:player] = []
-  HANDS[:dealer] = []
+  SUITS.product(CARDS).shuffle
 end
 
 def calculate_total(hand)
@@ -33,92 +25,137 @@ def calculate_total(hand)
 
   total = cards.inject(0) { |sum, card| sum + VALUES[card] }
 
-  if total > 21
+  if total > PLAY_TO
     count_aces = cards.count('Ace')
     count_aces.times do
-      total -= 10 if total > 21
+      total -= 10 if total > PLAY_TO
     end
   end
   total
 end
 
-def bust?(hand)
-  calculate_total(hand) > 21
+def bust?(total)
+  total > PLAY_TO
 end
 
-def deal(player, deck)
-  HANDS[player] << deck.pop
+def deal(hand, deck)
+  hand << deck.pop
 end
 
 def display_hand(hand)
   hand.map { |card| card[1] }[0..-2].join(', ') + " and #{hand[-1][1]}"
 end
 
-def dealer_plays(deck)
-  until calculate_total(HANDS[:dealer]) >= 17
-    deal(:dealer, deck)
+def dealer_plays(dealer_hand, deck)
+  puts "Dealers turn..."
+  puts "Dealer has #{display_hand(dealer_hand)}"
+  sleep(2)
+  until calculate_total(dealer_hand) >= DEALER_MUST_GET
+    puts "Dealer hits!"
+    deal(dealer_hand, deck)
+    puts "Dealer now has #{display_hand(dealer_hand)}"
+    sleep(2)
   end
 end
 
-def calculate_winner
-  if calculate_total(HANDS[:dealer]) < calculate_total(HANDS[:player])
-    "Player"
-  elsif calculate_total(HANDS[:dealer]) > calculate_total(HANDS[:player])
-    "Dealer"
+def calculate_winner(player_total, dealer_total)
+  if player_total > PLAY_TO
+    :player_bust
+  elsif dealer_total > PLAY_TO
+    :dealer_bust
+  elsif player_total > dealer_total
+    :player
+  elsif player_total < dealer_total
+    :dealer
   else
-    "Push"
+    :push
   end
 end
 
-def display_winner(winner)
-  puts "Dealer had #{display_hand(HANDS[:dealer])}," \
-       " you had #{display_hand(HANDS[:player])}"
+def display_round_winner(winner, player_hand, dealer_hand, player_total, dealer_total)
   case winner
-  when "Player"
+  when :player_bust
+    sleep(1)
+    puts "You busted..."
+  when :dealer_bust
+    puts "The dealer busted!"
+  when :player
     puts "You won!"
-    puts "Dealer: #{calculate_total(HANDS[:dealer])}, Player: #{calculate_total(HANDS[:player])}"
-  when "Dealer"
+  when :dealer
     puts "You lost..."
-    puts "Dealer: #{calculate_total(HANDS[:dealer])}, Player: #{calculate_total(HANDS[:player])}"
-  when "Push"
+  when :push
     puts "It's a push."
   end
+  puts "Dealer had #{display_hand(dealer_hand)} for a total of: #{dealer_total}"
+  puts "You had #{display_hand(player_hand)} for a total of: #{player_total}"
+end
+
+def display_game_winner(player_score, dealer_score)
+  if player_score >= ROUNDS_TO_WIN
+    puts "You won the game!"
+    puts "Final score is player: #{player_score}, dealer: #{dealer_score}"
+  else
+    puts "You lost the game..."
+    puts "Final score is player: #{player_score}, dealer: #{dealer_score}"
+  end
+end
+
+def play_again?
+  puts "Play again? (y/n)"
+  answer = $stdin.gets.chomp.downcase
+  answer.start_with?('y')
 end
 
 loop do
-  clear_hands
-  deck = shuffle_deck
-  2.times do
-    deal(:player, deck)
-    deal(:dealer, deck)
-  end
-
+  puts "Welcome to the Twenty-one game!"
+  player_score = 0
+  dealer_score = 0
   loop do
-    puts "Dealer has: #{HANDS[:dealer][0][1]} and unknown card"
-    puts "You have: #{display_hand(HANDS[:player])}"
-    puts "hit or stay?"
-    answer = $stdin.gets.chomp.downcase
-    break if answer.start_with?('s')
-    deal(:player, deck)
-    break if bust?(HANDS[:player])
-  end
+    puts "Next round" unless dealer_score.zero? && player_score.zero?
+    dealer_hand = []
+    player_hand = []
 
-  dealer_plays(deck)
+    deck = shuffle_deck
 
-  if bust?(HANDS[:player])
-    puts "You busted..."
-    puts "#{display_hand(HANDS[:player])} is #{calculate_total(HANDS[:player])}"
-  else
-    dealer_plays(deck)
-    if bust?(HANDS[:dealer])
-      puts "Dealer busted... YOU WIN!"
-    else
-      winner = calculate_winner
-      display_winner(winner)
+    # inital deal
+    2.times do
+      deal(player_hand, deck)
+      deal(dealer_hand, deck)
     end
+
+    # players turn
+    player_total = nil
+    loop do
+      puts "Dealer has: #{dealer_hand[0][1]} and unknown card"
+      puts "You have: #{display_hand(player_hand)}"
+      puts "hit or stay?"
+      answer = $stdin.gets.chomp.downcase
+      break if answer.start_with?('s')
+      deal(player_hand, deck)
+      player_total = calculate_total(player_hand)
+      break if bust?(player_total)
+    end
+    player_total ||= calculate_total(player_hand)
+
+    # dealers turn
+    dealer_plays(dealer_hand, deck) unless bust?(player_total)
+    dealer_total = calculate_total(dealer_hand)
+    puts "Dealer stays..." unless bust?(dealer_total) || bust?(player_total)
+    sleep(1)
+
+    # display winner
+    winner = calculate_winner(player_total, dealer_total)
+    display_round_winner(winner, player_hand, dealer_hand, player_total, dealer_total)
+
+    # update score and display
+    player_score += 1 if [:player, :dealer_bust].include?(winner)
+    dealer_score += 1 if [:dealer, :player_bust].include?(winner)
+    puts "The score is now dealer: #{dealer_score}, player: #{player_score}"
+    sleep(2)
+    puts
+    break if player_score >= ROUNDS_TO_WIN || dealer_score >= ROUNDS_TO_WIN
   end
 
-  puts "Play again? (y/n)"
-  answer = $stdin.gets.chomp.downcase
-  break unless answer.start_with?('y')
+  display_game_winner(player_score, dealer_score)
+  break unless play_again?
 end
