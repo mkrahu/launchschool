@@ -1,16 +1,17 @@
 require 'pry'
 
+# configuration
+PLAY_TO = 21
+DEALER_MUST_GET = 17
+ROUNDS_TO_WIN = 5
+
+# card constants
 SUITS = ['H', 'C', 'S', 'D']
 CARDS = ['Ace', 'King', 'Queen', 'Jack', '10', '9',
          '8', '7', '6', '5', '4', '3', '2']
 VALUES = { 'Ace' => 11, 'King' => 10, 'Queen' => 10, 'Jack' => 10,
            '10' => 10, '9' => 9, '8' => 8, '7' => 7, '6' => 6,
            '5' => 5, '4' => 4, '3' => 3, '2' => 2 }
-
-HANDS = { player: [], dealer: [] }
-PLAY_TO = 21
-DEALER_MUST_GET = 17
-ROUNDS_TO_WIN = 5
 
 def shuffle_deck
   SUITS.product(CARDS).shuffle
@@ -72,7 +73,7 @@ def calculate_winner(player_total, dealer_total)
   end
 end
 
-def display_round_winner(winner, player_hand, dealer_hand, player_total, dealer_total)
+def display_round_winner(winner, player_total, dealer_total)
   case winner
   when :player_bust
     sleep(1)
@@ -86,18 +87,17 @@ def display_round_winner(winner, player_hand, dealer_hand, player_total, dealer_
   when :push
     puts "It's a push."
   end
-  puts "Dealer had #{display_hand(dealer_hand)} for a total of: #{dealer_total}"
-  puts "You had #{display_hand(player_hand)} for a total of: #{player_total}"
+  puts "Dealer had #{dealer_total}"
+  puts "You had #{player_total}"
 end
 
 def display_game_winner(player_score, dealer_score)
   if player_score >= ROUNDS_TO_WIN
     puts "You won the game!"
-    puts "Final score is player: #{player_score}, dealer: #{dealer_score}"
   else
     puts "You lost the game..."
-    puts "Final score is player: #{player_score}, dealer: #{dealer_score}"
   end
+  puts "Final score is player: #{player_score}, dealer: #{dealer_score}"
 end
 
 def play_again?
@@ -143,9 +143,9 @@ loop do
     puts "Dealer stays..." unless bust?(dealer_total) || bust?(player_total)
     sleep(1)
 
-    # display winner
+    # display round winner
     winner = calculate_winner(player_total, dealer_total)
-    display_round_winner(winner, player_hand, dealer_hand, player_total, dealer_total)
+    display_round_winner(winner, player_total, dealer_total)
 
     # update score and display
     player_score += 1 if [:player, :dealer_bust].include?(winner)
