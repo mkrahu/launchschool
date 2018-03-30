@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby -wKU
-# rps_game.rb 
+# rps_game.rb
 
 class Player
   attr_accessor :move, :name
@@ -41,7 +41,6 @@ class Computer < Player
   def choose
     self.move = Move.new(Move::VALUES.sample)
   end
-
 end
 
 class Move
@@ -52,32 +51,16 @@ class Move
   end
 
   def >(other)
-    case @value
-    when 'rock'
-      return true if other.scissors?
-      return false
-    when 'scissors'
-      return true if other.paper?
-      return false
-    when 'paper'
-      return true if other.rock?
-      return false
-    end
+    (rock? && other.scissors?) ||
+      (scissors? && other.paper?) ||
+      (paper? && other.rock?)
   end
 
-    def <(other)
-      case @value
-      when 'rock'
-        return true if other.paper?
-        return false
-      when 'scissors'
-        return true if other.rock?
-        return false
-      when 'paper'
-        return true if other.scissors?
-        return false
-      end
-    end
+  def <(other)
+    (rock? && other.paper?) ||
+      (scissors? && other.rock?) ||
+      (paper? && other.scissors?)
+  end
 
   def rock?
     @value == 'rock'
@@ -112,32 +95,19 @@ class RPSGame
     puts "Thanks for playing Rock, Paper, Scissors... Goodbye!"
   end
 
-  def display_winner
+  def display_moves
     puts "#{human.name} chose #{human.move}."
     puts "#{computer.name} chose #{computer.move}."
-
+  end
+  
+  def display_winner
     if human.move > computer.move
-      puts "#{human.name} won!" 
+      puts "#{human.name} won!"
     elsif human.move < computer.move
-      puts "#{computer.name} won!" 
+      puts "#{computer.name} won!"
     else
       puts "It's a tie!"
     end
-
-    # case human.move
-    # when 'rock'
-    #   puts "It's a tie!" if computer.move == 'rock'
-    #   puts "#{human.name} won!" if computer.move == 'scissors'
-    #   puts "#{computer.name} won!" if computer.move == 'paper'
-    # when 'scissors'
-    #   puts "It's a tie!" if computer.move == 'scissors'
-    #   puts "#{human.name} won!" if computer.move == 'paper'
-    #   puts "#{computer.name} won!" if computer.move == 'rock'
-    # when 'paper'
-    #   puts "It's a tie!" if computer.move == 'paper'
-    #   puts "#{human.name} won!" if computer.move == 'rock'
-    #   puts "#{computer.name} won!" if computer.move == 'scissors'
-    # end
   end
 
   def play_again?
@@ -145,19 +115,19 @@ class RPSGame
     loop do
       print "Would you like to play again? (y/n) "
       answer = $stdin.gets.chomp
-      break if ['y','n'].include? answer
+      break if ['y', 'n'].include? answer
       puts "Invalid entry..."
     end
-      return true if answer == 'y'
-      return false
+    return true if answer == 'y'
+    return false if answer == 'n'
   end
-
 
   def play
     display_welcome_message
     loop do
       human.choose
       computer.choose
+      display_moves
       display_winner
       break unless play_again?
     end
