@@ -79,6 +79,68 @@ class Move
   end
 end
 
+class RPSRound
+  WINNING_SCORE = 3
+
+  attr_accessor :human, :computer, :score
+
+  def initialize(human, computer)
+    @human = human
+    @computer = computer
+    @score = { human.name => 0, computer.name => 0 }
+  end
+
+  def display_moves
+    system 'clear'
+    puts "#{human.name} chose #{human.move}."
+    puts "#{computer.name} chose #{computer.move}."
+  end
+
+  def calculate_turn
+    if human.move > computer.move
+      human.name
+    elsif human.move < computer.move
+      computer.name
+    end
+  end
+
+  def display_winner
+    turn_winner = calculate_turn
+    if turn_winner
+      puts "#{turn_winner} won!"
+      score[turn_winner] += 1
+    else
+      puts "It's a tie!"
+    end
+  end
+
+  def display_score
+    puts "Score is now #{human.name}: #{score[human.name]}, " \
+      "#{computer.name}: #{score[computer.name]}"
+  end
+
+  def winner?
+    score.value?(WINNING_SCORE)
+  end
+
+  def winner
+    score.key(WINNING_SCORE)
+  end
+
+  def play
+    puts "Best of #{WINNING_SCORE} wins!"
+    loop do
+      human.choose
+      computer.choose
+      display_moves
+      display_winner
+      display_score
+      break if winner?
+    end
+    winner
+  end
+end
+
 class RPSGame
   attr_accessor :human, :computer
 
@@ -88,26 +150,11 @@ class RPSGame
   end
 
   def display_welcome_message
-    puts "Welcome to Rock, Paper, Scissors!"
+    puts "Welcome to Rock, Paper, Scissors #{human.name}!"
   end
 
   def display_goodbye_message
     puts "Thanks for playing Rock, Paper, Scissors... Goodbye!"
-  end
-
-  def display_moves
-    puts "#{human.name} chose #{human.move}."
-    puts "#{computer.name} chose #{computer.move}."
-  end
-  
-  def display_winner
-    if human.move > computer.move
-      puts "#{human.name} won!"
-    elsif human.move < computer.move
-      puts "#{computer.name} won!"
-    else
-      puts "It's a tie!"
-    end
   end
 
   def play_again?
@@ -125,10 +172,9 @@ class RPSGame
   def play
     display_welcome_message
     loop do
-      human.choose
-      computer.choose
-      display_moves
-      display_winner
+      round = RPSRound.new(human, computer)
+      winner = round.play
+      puts "#{winner} won the game!"
       break unless play_again?
     end
     display_goodbye_message
