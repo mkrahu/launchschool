@@ -24,9 +24,9 @@ class Human < Player
   def choose
     choice = nil
     loop do
-      print "Please choose rock, paper, or scissors: "
+      print "Please choose #{Move::VALUES[0..-2].join(', ')} or #{Move::VALUES[-1]}: "
       choice = $stdin.gets.chomp
-      break if ['rock', 'paper', 'scissors'].include? choice
+      break if Move::VALUES.include? choice
       puts "Sorry, invalid choice..."
     end
     self.move = Move.new(choice)
@@ -44,34 +44,23 @@ class Computer < Player
 end
 
 class Move
-  VALUES = ['rock', 'paper', 'scissors']
+  VALUES = [ 'rock', 'paper', 'scissors', 'lizard', 'spock' ]
+  WIN_HASH = {  'rock'     => ['scissors', 'lizard'],
+                'paper'    => ['rock', 'spock'],
+                'scissors' => ['paper', 'lizard'],
+                'lizard'   => ['spock', 'paper'],
+                'spock'    => ['scissors', 'rock'] }
 
   def initialize(value)
     @value = value
   end
 
   def >(other)
-    (rock? && other.scissors?) ||
-      (scissors? && other.paper?) ||
-      (paper? && other.rock?)
+    WIN_HASH[@value].include?(other)
   end
 
   def <(other)
-    (rock? && other.paper?) ||
-      (scissors? && other.rock?) ||
-      (paper? && other.scissors?)
-  end
-
-  def rock?
-    @value == 'rock'
-  end
-
-  def paper?
-    @value == 'paper'
-  end
-
-  def scissors?
-    @value == 'scissors'
+    ! WIN_HASH[@value].include?(other)
   end
 
   def to_s
@@ -150,11 +139,11 @@ class RPSGame
   end
 
   def display_welcome_message
-    puts "Welcome to Rock, Paper, Scissors #{human.name}!"
+    puts "Welcome to #{Move::VALUES[0..-2].join(', ')} or #{Move::VALUES[-1]} #{human.name}!"
   end
 
   def display_goodbye_message
-    puts "Thanks for playing Rock, Paper, Scissors... Goodbye!"
+    puts "Thanks for playing Rock, Paper, Scissors, Lizard, Spock... Goodbye!"
   end
 
   def play_again?
