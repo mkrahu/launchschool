@@ -6,7 +6,7 @@ class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9],
                    [1, 4, 7], [2, 5, 8], [3, 6, 9],
                    [1, 5, 9], [3, 5, 7]]
-  
+
   def initialize
     @squares = Hash.new
     reset
@@ -16,6 +16,7 @@ class Board
     @squares[num].marker = marker
   end
 
+  # rubocop:disable Metrics/AbcSize
   def draw
     puts "     |     |     "
     puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}  "
@@ -29,6 +30,7 @@ class Board
     puts "  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}  "
     puts "     |     |     "
   end
+  # rubocop:enable Metrics/AbcSize
 
   def reset
     (1..9).each { |num| @squares[num] = Square.new }
@@ -59,8 +61,9 @@ class Board
   end
 
   private
+
   def identical_markers(squares)
-    identical = squares.select do |square| 
+    identical = squares.select do |square|
       (square.marker == squares.first.marker) && square.marked?
     end
     identical.size
@@ -95,7 +98,6 @@ class Player
   def initialize(marker)
     @marker = marker
   end
-
 end
 
 class TTTGame
@@ -110,7 +112,6 @@ class TTTGame
     @computer = Player.new(COMPUTER_MARKER)
     @current_marker = FIRST_TO_MOVE
   end
-
 
   def play
     display_welcome_message
@@ -131,7 +132,7 @@ class TTTGame
   end
 
   private
-  
+
   def clear
     system 'clear'
   end
@@ -191,7 +192,7 @@ class TTTGame
       puts "Computer won!"
     else
       puts "It's a tie!"
-    end 
+    end
   end
 
   def play_again?
@@ -199,7 +200,7 @@ class TTTGame
     loop do
       print "Would you like to play again? (y/n): "
       answer = $stdin.gets.chomp
-      break if ['y','n'].include?(answer)
+      break if ['y', 'n'].include?(answer)
       puts "Must be (y)es or (n)o..."
     end
     answer == 'y'
@@ -218,7 +219,6 @@ class TTTGame
   def display_goodbye_message
     puts "Thanks for playing Tic Tac Toe! Goodbye!"
   end
-
 end
 
 game = TTTGame.new
