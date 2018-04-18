@@ -8,14 +8,14 @@ module Hand
   end
 
   def busted?
-    total > 21
+    total > Game::WINNING_TOTAL
   end
 
   def total
     total = cards.map { |card| Card::VALUES[card.face] }.inject(:+)
 
     cards.select(&:ace?).count.times do
-      break if total <= 21
+      break if total <= Game::WINNING_TOTAL
       total -= 10
     end
 
@@ -66,7 +66,7 @@ class Dealer < Participant
   end
 
   def hand_meets_minimum?
-    total >= 17
+    total >= Game::DEALER_HOLDS
   end
 end
 
@@ -113,6 +113,9 @@ class Card
 end
 
 class Game
+  WINNING_TOTAL = 21
+  DEALER_HOLDS = 17
+
   attr_accessor :player, :dealer, :deck
 
   def initialize
@@ -201,7 +204,7 @@ class Game
   end
 
   def player_hits
-    puts "#{name} hits!"
+    puts "#{player.name} hits!"
     player.add_card(deck.deal)
   end
 
@@ -220,7 +223,7 @@ class Game
   end
 
   def dealer_hits
-    puts "#{name} hits!"
+    puts "#{dealer.name} hits!"
     dealer.add_card(deck.deal)
   end
 
@@ -242,14 +245,17 @@ class Game
     if winner
       puts "#{winner.name} won!"
     else
-      put "It's a push..."
+      puts "It's a push..."
     end
   end
 
   def calculate_winner
-    if player.total > dealer.total || dealer.busted?
+    if someone_busted?
+      return player if player.busted?
+      dealer
+    elsif player.total > dealer.total
       player
-    elsif dealer.total > player.total || player.busted?
+    elsif dealer.total > player.total
       dealer
     end
   end
