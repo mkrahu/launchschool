@@ -128,10 +128,10 @@ class Game
       initial_show_cards
       player_turn
       dealer_turn unless player.busted?
+      show_cards unless someone_busted?
       show_result
       break unless play_again?
       reset
-      clear
     end
     display_goodbye_message
   end
@@ -150,6 +150,7 @@ class Game
   def reset
     player.discard
     dealer.discard
+    clear
   end
 
   def clear
@@ -184,18 +185,24 @@ class Game
   end
 
   def player_turn
+    name = player.name
     loop do
-      name = player.name
       print "#{name}, would you like to hit or stay? "
       answer = $stdin.gets.chomp
-
       break if answer.start_with?('s')
-      puts "#{name} hits!"
-      player.add_card(deck.deal)
 
+      player_hits
       puts "#{name} now has: #{player.show_cards}"
-      break if player.busted?
+      if player.busted?
+        puts "#{name} busted!"
+        break
+      end
     end
+  end
+
+  def player_hits
+    puts "#{name} hits!"
+    player.add_card(deck.deal)
   end
 
   def dealer_turn
@@ -205,33 +212,45 @@ class Game
     loop do
       break if dealer.hand_meets_minimum?
       sleep 1
-      puts "#{name} hits!"
-      dealer.add_card(deck.deal)
+      dealer_hits
       puts "#{name} now has: #{dealer.show_cards}"
       break if dealer.busted?
     end
-    sleep 1
+    display_dealer_result
   end
 
-  def show_result
+  def dealer_hits
+    puts "#{name} hits!"
+    dealer.add_card(deck.deal)
+  end
+
+  def display_dealer_result
     if dealer.busted?
       puts "#{dealer.name} busted!"
     else
       puts "#{dealer.name} stays!"
     end
-    if player.busted?
-      puts "#{player.name} busted!"
-    elsif dealer.busted?
-      puts "#{player.name} wins!"
+    sleep 1
+  end
+
+  def someone_busted?
+    player.busted? || dealer.busted?
+  end
+
+  def show_result
+    winner = calculate_winner
+    if winner
+      puts "#{winner.name} won!"
     else
-      show_cards
-      if player.total > dealer.total
-        puts "#{player.name} wins!"
-      elsif dealer.total > player.total
-        puts "#{dealer.name} wins!"
-      else
-        puts "It's a push..."
-      end
+      put "It's a push..."
+    end
+  end
+
+  def calculate_winner
+    if player.total > dealer.total || dealer.busted?
+      player
+    elsif dealer.total > player.total || player.busted?
+      dealer
     end
   end
 end
