@@ -36,9 +36,7 @@ class TodoList
     @title = title
     @todos = []
   end
-
   
-
   def size
     @todos.size
   end
