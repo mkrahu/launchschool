@@ -1,6 +1,33 @@
 # todo_list.rb
 
-require_relative 'todo'
+class Todo
+  DONE_MARKER = 'X'
+  UNDONE_MARKER = ' '
+
+  attr_accessor :title, :description, :done
+
+  def initialize(title, description='')
+    @title = title
+    @description = description
+    @done = false
+  end
+
+  def done!
+    self.done = true
+  end
+
+  def done?
+    done
+  end
+
+  def undone!
+    self.done = false
+  end
+
+  def to_s
+    "[#{ done? ? DONE_MARKER : UNDONE_MARKER}] #{title}"
+  end
+end
 
 class TodoList
   attr_accessor :title
@@ -10,29 +37,22 @@ class TodoList
     @todos = []
   end
 
-  def add(todo)
-    raise TypeError, 'can only add Todo objects' unless todo.instance_of? Todo
-    todos << todo
-  end
-
-  def <<(todo)
-    add(todo)
-  end
+  
 
   def size
-    todos.size
+    @todos.size
   end
 
   def first
-    todos.first
+    @todos.first
   end
 
   def last
-    todos.last
+    @todos.last
   end
 
   def item_at(index)
-    todos.fetch(index)
+    @todos.fetch(index)
   end
 
   def mark_done_at(index)
@@ -44,37 +64,43 @@ class TodoList
   end
 
   def shift
-    todos.shift
+    @todos.shift
   end
 
   def pop
-    todos.pop
+    @todos.pop
   end
 
+  def <<(todo)
+    raise TypeError, 'can only add Todo objects' unless todo.instance_of? Todo
+    @todos << todo
+  end
+  alias_method :add, :<<
+
   def remove_at(index)
-    todos.delete(item_at(index))
+    @todos.delete(item_at(index))
   end
 
   def done?
-    todos.all? { |todo| todo.done? }
+    @todos.all? { |todo| todo.done? }
   end
 
   def done!
-    todos.each_index { |index| mark_done_at(index) }
+    @todos.each_index { |index| mark_done_at(index) }
   end
 
   def to_s
     text = "---- #{title} ----\n"
-    text << todos.map { |todo| todo.to_s }.join("\n")
+    text << @todos.map { |todo| todo.to_s }.join("\n")
     text
   end
 
   def to_a
-    todos
+    @todos
   end
 
   def each
-    todos.each { |todo| yield(todo) }
+    @todos.each { |todo| yield(todo) }
     self
   end
 
@@ -107,7 +133,4 @@ class TodoList
   def mark_all_undone
     each { |todo| todo.undone! }
   end
-
-  private
-  attr_accessor :todos
 end
