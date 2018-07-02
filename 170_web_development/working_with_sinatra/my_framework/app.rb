@@ -15,6 +15,7 @@ class App < Monroe
       piece_of_advice = Advice.new.generate
       status = '200'
       headers = {"Content-Type" => 'text/html'}
+      
       response(status, headers) do
         erb :advice, message: piece_of_advice
       end
