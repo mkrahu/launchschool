@@ -1,0 +1,12 @@
+<h2><%= params[:name].capitalize %></h2>
+<ul>
+  <% @interests.each do |key, values| %>
+    <li><%= key.capitalize %>: <%= values.is_a?(Array) ? values.join(', ') : values %></li>
+  <% end %>
+</ul>
+<h2>Other users</h2>
+<ul>
+  <% @other_users.each do |name| %>
+    <li><a href='/users/<%= name %>'><%= name.capitalize %></a></li>
+  <% end %>
+</ul>
