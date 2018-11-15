@@ -1,9 +1,10 @@
+# Monroe web framework
 class Monroe
-  def erb(filename, local = {})
+  def erb(view, local = {})
     b = binding
     message = local[:message]
-    content = File.read("views/#{filename}.erb")
-    ERB.new(content).result(b)
+    template = File.read("views/#{view}.erb")
+    ERB.new(template).result(b)
   end
 
   def response(status, headers, body = '')

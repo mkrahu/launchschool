@@ -63,7 +63,6 @@ loop do
     prompt(get_message('number_error', LANG))
   end
 
-
   prompt(get_message('valid_operator', LANG))
   operation = ''
   loop do
