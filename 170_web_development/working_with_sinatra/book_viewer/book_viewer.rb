@@ -9,10 +9,12 @@ get "/" do
 end
 
 get "/chapter/:number" do
-  @number = params[:number]
-  @title = "Chapter #{@number}"
   @contents = File.readlines('data/toc.txt')
-  @chapter = File.readlines("data/chp#{@number}.txt","\n\n")
+
+  number = params[:number]
+  @title = "Chapter #{number}"
+
+  @chapter = File.readlines("data/chp#{number}.txt","\n\n")
 
   erb :chapter
 end
