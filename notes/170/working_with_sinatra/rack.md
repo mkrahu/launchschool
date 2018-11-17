@@ -115,3 +115,17 @@ end
 ```
 
 ## View Templates
+
+View templates are separate files that allow us to do some pre-processing on the server side (and intermingle Ruby code with HTML), the Ruby code will be executed and then translated into a String (normally HTML) to be sent back to the client.
+
+### ERB
+ERB (Embedded Ruby) is a library and popular template engine for Ruby applications. ERB is a part of the standard library and therefore does NOT need to be downloaded as a Gem from Rubygems.
+
+How to use ERB:
+1. `require 'erb'`
+2. Create an ERB template object and pass in the string to be translated
+3. Invoke the ERB instance method `#result`, which will give us a 100% HTML string
+
+ERB Syntax:
+* `<%= %>` evaluates the embedded Ruby code and returns the result in HTML
+* `<% %>` evaluates the embedded Ruby code but does NOT return the result in HTML, used for logic only
