@@ -30,6 +30,31 @@ get "/chapter/:number" do
   erb :chapter
 end
 
+def each_chapter
+  @contents.each_with_index do |name, index|
+    chapter_num = index + 1
+    text = File.read("data/chp#{chapter_num}.txt")
+    yield chapter_num, name, text
+  end
+end
+
+def chapters_matching(query)
+  results = []
+
+  return results if !query || query.empty?
+
+  each_chapter do |num, name, text|
+    results << { number: num, name: name } if text.include?(query)
+  end
+
+  results
+end
+
+get "/search" do
+  @results = chapters_matching(params[:query])
+  erb :search
+end
+
 not_found do
   redirect "/"
 end
