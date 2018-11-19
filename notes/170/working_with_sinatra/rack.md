@@ -128,4 +128,50 @@ How to use ERB:
 
 ERB Syntax:
 * `<%= %>` evaluates the embedded Ruby code and returns the result in HTML
-* `<% %>` evaluates the embedded Ruby code but does NOT return the result in HTML, used for logic only
+* `<% %>` evaluates the embedded Ruby code but does NOT return the result in HTML, used for logic, method definitions, etc.
+
+```erb
+# example.erb
+
+<% names = ['bob', 'joe', 'kim', 'jill'] %>
+
+<html>
+  <body>
+    <h4>Hello, my name is <%= names.sample %></h4>
+  </body>
+</html>
+```
+
+### Adding View Templates
+
+View templates are normally stored in a `view` directory, however keep in mind they must be processed before sending them back to the client (unlike static HTML files)
+
+```ruby
+# hello_world.rb
+
+class HelloWorld
+  def call(env)
+    case env['REQUEST_PATH']
+    when '/'
+      template = File.read("views/index.erb")
+      content = ERB.new(template)
+      ['200', {"Content-Type" => "text/html"}, [content.result]]
+    when '/advice'
+      piece_of_advice = Advice.new.generate
+      [
+        '200',
+        {"Content-Type" => 'text/html'},
+        ["<html><body><b><em>#{piece_of_advice}</em></b></body></html>"]
+      ]
+    else
+      [
+        '404',
+        {"Content-Type" => 'text/html', "Content-Length" => '48'},
+        ["<html><body><h4>404 Not Found</h4></body></html>"]
+      ]
+    end
+  end
+end
+```
+
+Notice that we create a new ERB template with the `#new` contructor (with the `.erb` file already read into a string variable as an argument). The string (containing the files contents) will be executed by ERB when the `#result` method is called.
