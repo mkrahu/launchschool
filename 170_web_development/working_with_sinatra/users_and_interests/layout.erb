@@ -1,0 +1,10 @@
+<!doctype html>
+<html>
+  <head>
+    <title><%= @title %></title>
+  </head>
+  <body>
+    <%= yield %>
+    <p>There are <%= @users.size %> users with <%= count_interests %> interests </p>
+  </body>
+</html>
