@@ -1,13 +1,13 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    backports (3.11.3)
+    backports (3.11.4)
     erubis (2.7.0)
     multi_json (1.13.1)
-    rack (1.6.10)
+    rack (1.6.11)
     rack-protection (1.5.5)
       rack
-    rack-test (1.0.0)
+    rack-test (1.1.0)
       rack (>= 1.0, < 3)
     sinatra (1.4.8)
       rack (~> 1.5)

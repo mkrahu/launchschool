@@ -1,12 +1,12 @@
-<h2><%= params[:name].capitalize %></h2>
+<h1><%= @name.capitalize %></h1>
 <ul>
-  <% @interests.each do |key, values| %>
-    <li><%= key.capitalize %>: <%= values.is_a?(Array) ? values.join(', ') : values %></li>
-  <% end %>
+  <li>Email: <%= @interests[:email] %></li>
+  <li>Interests: <%= @interests[:interests].join(', ') %></li>
 </ul>
-<h2>Other users</h2>
+<p>Other Users</p>
 <ul>
-  <% @other_users.each do |name| %>
-    <li><a href='/users/<%= name %>'><%= name.capitalize %></a></li>
+  <% @users.each do |name, _| %>
+    <% next if name.to_s == @name %>
+    <li><a href="/user/<%=name %>"><%= name %></a></li>
   <% end %>
 </ul>
