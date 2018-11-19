@@ -32,3 +32,7 @@ get "/user/:name" do
 
   erb :user
 end
+
+not_found do
+  "Not found"
+end
