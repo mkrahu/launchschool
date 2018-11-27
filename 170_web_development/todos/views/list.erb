@@ -1,0 +1,18 @@
+<section id="todos">
+  <header>
+    <h2><%= @list[:name] %></h2>
+    <ul>
+      <a href="/lists/<%= params[:index] %>/edit">
+      <img src="/images/icon_edit.png"/>Edit List</a>
+    </ul>
+  </header>
+  <ul>
+    <% @list[:todos].each do |todo| %>
+      <li><%= todo %></li>
+    <% end %>
+  </ul>
+</section>
+
+<% content_for :header_links do %>
+  <a href="/lists">All Lists</a>
+<% end %>

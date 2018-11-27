@@ -1,6 +1,8 @@
 require 'sinatra'
 require 'sinatra/reloader'
 require 'tilt/erubis'
+require 'sinatra/content_for'
+require 'pry'
 
 configure do
   enable :sessions
@@ -50,4 +52,48 @@ post '/lists' do
 
     redirect '/lists'
   end
+end
+
+# Display an individual list
+get '/lists/:index' do
+  index = params[:index].to_i
+  @list = session[:lists][index]
+
+  erb :list, layout: :layout
+end
+
+# Edit am existing list
+get '/lists/:index/edit' do
+  index = params[:index].to_i
+  @list = session[:lists][index]
+
+  erb :edit_list, layout: :layout
+end
+
+# Edit a existing list
+post '/lists/:index' do
+  index = params[:index].to_i
+  @list = session[:lists][index]
+
+  list_name = params[:list_name].strip
+
+  error = error_in_list_name(list_name)
+  if error
+    session[:error] = error
+    erb :edit_list, layout: :layout
+  else
+    session[:lists][index][:name] = list_name
+    session[:success] = 'The list has been updated.'
+
+    redirect "lists/#{index}"
+  end
+end
+
+post '/lists/:index/destroy' do
+  index = params[:index].to_i
+
+  session[:lists].delete_at(index)
+
+  session[:success] = 'The list has been deleted.'
+  redirect '/lists'
 end
