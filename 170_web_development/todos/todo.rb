@@ -2,7 +2,6 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'tilt/erubis'
 require 'sinatra/content_for'
-require 'pry'
 
 configure do
   enable :sessions
