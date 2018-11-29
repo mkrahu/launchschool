@@ -9,6 +9,24 @@ configure do
   set :session_secret, 'secret' # don't do this in a regular app
 end
 
+helpers do
+  def complete?(list)
+    list[:todos].size > 0 && list[:todos].all? { |todo| todo[:completed] }
+  end
+
+  def list_class(list)
+    "complete" if complete?(list)
+  end
+
+  def uncompleted_todos(list)
+    list[:todos].reject { |todo| todo[:completed] }.size
+  end
+
+  def total_todos(list)
+    list[:todos].size
+  end
+end
+
 before do
   session[:lists] ||= []
 end
@@ -55,9 +73,9 @@ post '/lists' do
 end
 
 # Display an individual list
-get '/lists/:index' do
-  index = params[:index].to_i
-  @list = session[:lists][index]
+get '/lists/:list_id' do
+  @list_id = params[:list_id].to_i
+  @list = session[:lists][@list_id]
 
   erb :list, layout: :layout
 end
@@ -70,7 +88,7 @@ get '/lists/:index/edit' do
   erb :edit_list, layout: :layout
 end
 
-# Edit a existing list
+# Edit an existing list
 post '/lists/:index' do
   index = params[:index].to_i
   @list = session[:lists][index]
@@ -89,6 +107,7 @@ post '/lists/:index' do
   end
 end
 
+# Delete an existing list
 post '/lists/:index/destroy' do
   index = params[:index].to_i
 
@@ -96,4 +115,70 @@ post '/lists/:index/destroy' do
 
   session[:success] = 'The list has been deleted.'
   redirect '/lists'
+end
+
+# Return error message if todo is invalid. Return nil if todo is valid.
+def error_in_todo(name)
+  if !(1..100).cover?(name.size)
+    'Todo name must be between 1 and 100 characters.'
+  end
+end
+
+# Add a todo to a list
+post '/lists/:list_id/todos' do
+  @list_id = params[:list_id].to_i
+  @list = session[:lists][@list_id]
+
+  todo = params[:todo].strip
+
+  error = error_in_todo(todo)
+  if error
+    session[:error] = error
+    erb :list, layout: :layout
+  else
+    @list[:todos] << { name: todo, completed: false }
+    session[:success] = 'The todo has been added.'
+
+    redirect "/lists/#{@list_id}"
+  end
+end
+
+# Delete a todo from a list
+post '/lists/:list_id/todos/:todo_id/destroy' do
+  list_id = params[:list_id].to_i
+  list = session[:lists][list_id]
+
+  todo_id = params[:todo_id].to_i
+
+  list[:todos].delete_at(todo_id)
+  session[:success] = "Todo successfully deleted."
+
+  redirect "/lists/#{list_id}"
+end
+
+# Update status of todo in a list
+post '/lists/:list_id/todos/:todo_id' do
+  @list_id = params[:list_id].to_i
+  @list = session[:lists][@list_id]
+  is_completed = params[:completed] == "true"
+
+  todo_id = params[:todo_id].to_i
+
+  @list[:todos][todo_id][:completed] = is_completed
+
+  redirect "/lists/#{@list_id}"
+end
+
+# Complete all todos in a list
+post '/lists/:id/complete_all' do
+  @list_id = params[:id].to_i
+  @list = session[:lists][@list_id]
+
+  @list[:todos].each do |todo|
+    todo[:completed] = true
+  end
+
+  session[:success] = "All todos have been completed."
+
+  redirect "/lists/#{@list_id}"
 end
