@@ -2,10 +2,13 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'tilt/erubis'
 require 'sinatra/content_for'
+require 'pry'
 
 configure do
   enable :sessions
   set :session_secret, 'secret' # don't do this in a regular app
+
+  set :erb, :escape_html => true
 end
 
 helpers do
@@ -15,6 +18,10 @@ helpers do
 
   def list_class(list)
     "complete" if complete?(list)
+  end
+
+  def todo_class(todo)
+    "complete" if todo[:completed]
   end
 
   def uncompleted_todos(list)
@@ -40,8 +47,37 @@ helpers do
   end
 end
 
+# Load list at index and handle invalid indexes
+def load_list(index)
+  return session[:lists][index] if index < session[:lists].size
+
+  session[:error] = 'The specified list was not found.'
+  redirect '/lists'
+end
+
+# Return error message if name is invalid. Return nil if name is valid.
+def error_in_list_name(name)
+  if !(1..100).cover?(name.size)
+    'List name must be between 1 and 100 characters.'
+  elsif session[:lists].any? { |list| list[:name] == name }
+    'List name must be unique'
+  end
+end
+
+# Return error message if todo is invalid. Return nil if todo is valid.
+def error_in_todo(name)
+  if !(1..100).cover?(name.size)
+    'Todo name must be between 1 and 100 characters.'
+  end
+end
+
 before do
   session[:lists] ||= []
+end
+
+before "/lists/:list_id/*" do
+  @list_id = params[:list_id].to_i
+  @list = load_list(@list_id)
 end
 
 get '/' do
@@ -58,15 +94,6 @@ end
 # Render the new list form
 get '/lists/new' do
   erb :new_list
-end
-
-# Return error message if name is invalid. Return nil if name is valid.
-def error_in_list_name(name)
-  if !(1..100).cover?(name.size)
-    'List name must be between 1 and 100 characters.'
-  elsif session[:lists].any? { |list| list[:name] == name }
-    'List name must be unique'
-  end
 end
 
 # Create a new list
@@ -88,24 +115,19 @@ end
 # Display an individual list
 get '/lists/:list_id' do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
 
   erb :list, layout: :layout
 end
 
 # Edit am existing list
-get '/lists/:index/edit' do
-  index = params[:index].to_i
-  @list = session[:lists][index]
+get '/lists/:list_id/edit' do
 
   erb :edit_list, layout: :layout
 end
 
 # Edit an existing list
-post '/lists/:index' do
-  index = params[:index].to_i
-  @list = session[:lists][index]
-
+post '/lists/:list_id' do
   list_name = params[:list_name].strip
 
   error = error_in_list_name(list_name)
@@ -113,7 +135,7 @@ post '/lists/:index' do
     session[:error] = error
     erb :edit_list, layout: :layout
   else
-    session[:lists][index][:name] = list_name
+    session[:lists][@list_id][:name] = list_name
     session[:success] = 'The list has been updated.'
 
     redirect "lists/#{index}"
@@ -121,27 +143,15 @@ post '/lists/:index' do
 end
 
 # Delete an existing list
-post '/lists/:index/destroy' do
-  index = params[:index].to_i
-
-  session[:lists].delete_at(index)
+post '/lists/:list_id/destroy' do
+  session[:lists].delete_at(@list_id)
 
   session[:success] = 'The list has been deleted.'
   redirect '/lists'
 end
 
-# Return error message if todo is invalid. Return nil if todo is valid.
-def error_in_todo(name)
-  if !(1..100).cover?(name.size)
-    'Todo name must be between 1 and 100 characters.'
-  end
-end
-
 # Add a todo to a list
 post '/lists/:list_id/todos' do
-  @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
-
   todo = params[:todo].strip
 
   error = error_in_todo(todo)
@@ -158,21 +168,16 @@ end
 
 # Delete a todo from a list
 post '/lists/:list_id/todos/:todo_id/destroy' do
-  list_id = params[:list_id].to_i
-  list = session[:lists][list_id]
-
   todo_id = params[:todo_id].to_i
 
-  list[:todos].delete_at(todo_id)
+  @list[:todos].delete_at(todo_id)
   session[:success] = "Todo successfully deleted."
 
-  redirect "/lists/#{list_id}"
+  redirect "/lists/#{@list_id}"
 end
 
 # Update status of todo in a list
 post '/lists/:list_id/todos/:todo_id' do
-  @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
   is_completed = params[:completed] == "true"
 
   todo_id = params[:todo_id].to_i
@@ -184,9 +189,6 @@ end
 
 # Complete all todos in a list
 post '/lists/:id/complete_all' do
-  @list_id = params[:id].to_i
-  @list = session[:lists][@list_id]
-
   @list[:todos].each do |todo|
     todo[:completed] = true
   end
@@ -194,4 +196,8 @@ post '/lists/:id/complete_all' do
   session[:success] = "All todos have been completed."
 
   redirect "/lists/#{@list_id}"
+end
+
+not_found do
+  redirect '/lists'
 end
