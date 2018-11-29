@@ -25,6 +25,20 @@ helpers do
   def total_todos(list)
     list[:todos].size
   end
+
+  def sorted_lists(lists, &block)
+    complete_lists, incomplete_lists = lists.partition { |list| complete?(list) }
+
+    incomplete_lists.each { |list| yield list, lists.index(list) }
+    complete_lists.each { |list| yield list, lists.index(list) }
+  end
+
+  def sorted_todos(todos, &block)
+    complete_todos, incomplete_todos = todos.partition { |todo| todo[:completed] }
+
+    incomplete_todos.each { |todo| yield todo, todos.index(todo) }
+    complete_todos.each { |todo| yield todo, todos.index(todo) }
+  end
 end
 
 before do
