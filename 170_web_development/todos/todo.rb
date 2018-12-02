@@ -35,8 +35,8 @@ helpers do
   def sorted_lists(lists, &block)
     complete_lists, incomplete_lists = lists.partition { |list| complete?(list) }
 
-    incomplete_lists.each { |list| yield list, lists.index(list) }
-    complete_lists.each { |list| yield list, lists.index(list) }
+    incomplete_lists.each { |list| yield list, list[:id] }
+    complete_lists.each { |list| yield list, list[:id] }
   end
 
   def sorted_todos(todos, &block)
@@ -48,11 +48,15 @@ helpers do
 end
 
 # Load list at index and handle invalid indexes
-def load_list(index)
-  return session[:lists][index] if index < session[:lists].size
+def load_list(id)
+  list_ids = session[:lists].map { |list| list[:id] }
 
-  session[:error] = 'The specified list was not found.'
-  redirect '/lists'
+  if list_ids.include?(id)
+    session[:lists].find { |list| list[:id] == id }
+  else
+    session[:error] = 'The specified list was not found.'
+    redirect '/lists'
+  end
 end
 
 # Return error message if name is invalid. Return nil if name is valid.
@@ -69,6 +73,16 @@ def error_in_todo(name)
   if !(1..100).cover?(name.size)
     'Todo name must be between 1 and 100 characters.'
   end
+end
+
+def next_todo_id(list)
+  max = list[:todos].map { |todo| todo[:id] }.max || 0
+  max + 1
+end
+
+def next_list_id
+  max = session[:lists].map { |list| list[:id] }.max || 0
+  max + 1
 end
 
 before do
@@ -105,7 +119,8 @@ post '/lists' do
     session[:error] = error
     erb :new_list, layout: :layout
   else
-    session[:lists] << { name: list_name, todos: [] }
+    id = next_list_id
+    session[:lists] << { id: id, name: list_name, todos: [] }
     session[:success] = 'The list has been created.'
 
     redirect '/lists'
@@ -144,10 +159,15 @@ end
 
 # Delete an existing list
 post '/lists/:list_id/destroy' do
-  session[:lists].delete_at(@list_id)
+  session[:lists].delete_if { |list| list[:id] == @list_id }
 
-  session[:success] = 'The list has been deleted.'
-  redirect '/lists'
+  if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
+    "/lists"
+  else
+    session[:success] = 'The list has been deleted.'
+    redirect '/lists'
+  end
+
 end
 
 # Add a todo to a list
@@ -159,9 +179,10 @@ post '/lists/:list_id/todos' do
     session[:error] = error
     erb :list, layout: :layout
   else
-    @list[:todos] << { name: todo, completed: false }
-    session[:success] = 'The todo has been added.'
+    id = next_todo_id(@list)
+    @list[:todos] << { id: id, name: todo, completed: false }
 
+    session[:success] = 'The todo has been added.'
     redirect "/lists/#{@list_id}"
   end
 end
@@ -170,10 +191,14 @@ end
 post '/lists/:list_id/todos/:todo_id/destroy' do
   todo_id = params[:todo_id].to_i
 
-  @list[:todos].delete_at(todo_id)
-  session[:success] = "Todo successfully deleted."
+  @list[:todos].delete_if { |todo| todo[:id] == todo_id }
 
-  redirect "/lists/#{@list_id}"
+  if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
+    status 204
+  else
+    session[:success] = "Todo successfully deleted."
+    redirect "/lists/#{@list_id}"
+  end
 end
 
 # Update status of todo in a list
@@ -181,8 +206,8 @@ post '/lists/:list_id/todos/:todo_id' do
   is_completed = params[:completed] == "true"
 
   todo_id = params[:todo_id].to_i
-
-  @list[:todos][todo_id][:completed] = is_completed
+  todo = @list[:todos].find { |todo| todo[:id] == todo_id }
+  todo[:completed] = is_completed
 
   redirect "/lists/#{@list_id}"
 end
