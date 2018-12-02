@@ -1,0 +1,1 @@
+This is a document for the Content Management System project in LaunchSchool.
