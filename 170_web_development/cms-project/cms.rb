@@ -10,8 +10,15 @@ get '/' do
     short_name = File.basename(file_name)
 
     { short_name: short_name,
-      location: "../data/#{short_name}" }
+      location: "#{short_name}" }
   end
 
   erb :index
+end
+
+get '/:file_name' do
+  file_path = root + '/data/' + params[:file_name]
+
+  headers['Content-Type'] = 'text/plain'
+  File.read(file_path)
 end
