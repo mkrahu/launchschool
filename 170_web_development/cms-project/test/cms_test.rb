@@ -17,9 +17,9 @@ class AppTest < Minitest::Test
 
     assert_equal 200, last_response.status
     assert_equal  'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes? last_response.body, 'history.txt'
-    assert_includes? last_response.body, 'about.txt'
-    assert_includes? last_response.body, 'changes.txt'
+    assert_includes last_response.body, 'history.txt'
+    assert_includes last_response.body, 'about.txt'
+    assert_includes last_response.body, 'changes.txt'
   end
 
   def test_view_text_document
@@ -30,6 +30,18 @@ class AppTest < Minitest::Test
     assert_equal 200, last_response.status
     assert_equal 'text/plain', last_response['Content-Type']
     assert_equal file, last_response.body
+  end
+
+  def test_bad_doc_request
+    get '/bad_doc.txt'
+    assert_equal 302, last_response.status
+
+    get last_response["Location"]
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, 'bad_doc.txt does not exist.'
+
+    get '/'
+    refute_includes last_response.body, 'bad_doc.txt does not exist.'
   end
 end
 
