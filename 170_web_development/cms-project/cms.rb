@@ -1,34 +1,103 @@
 require 'sinatra'
 require 'sinatra/reloader'
 require 'tilt/erubis'
+require 'redcarpet'
 require 'pry'
 
-root = File.expand_path("..", __FILE__)
+def data_path
+  if ENV["RACK_ENV"] == "test"
+    File.expand_path("../test/data", __FILE__)
+  else
+    File.expand_path("../data", __FILE__)
+  end
+end
 
 configure do
   enable :sessions
   set :session_secret, 'secret'
 end
 
-get '/' do
-  @files = Dir[root + "/data/*"].map do |file_name|
-    short_name = File.basename(file_name)
+def render_markdown(text)
+  markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
+  markdown.render(text)
+end
 
-    { short_name: short_name,
-      location: "#{short_name}" }
+def load_file_content(file_path)
+  file = File.read(file_path)
+  case File.extname(file_path)
+  when '.md'
+    erb render_markdown(file)
+  when '.txt'
+    headers['Content-Type'] = 'text/plain'
+    file
+  else
+    "#{File.extname(file_path)} file format not supported..."
   end
+end
+
+# Display index page
+get '/' do
+  pattern = File.join(data_path, '*')
+  @files = Dir.glob(pattern).map do |file_name|
+    File.basename(file_name)
+  end
+
   erb :index
 end
 
-get '/:file_name' do
-  file_path = root + '/data/' + params[:file_name]
+# Render new doc form
+get '/new' do
+  erb :new
+end
 
-  headers['Content-Type'] = 'text/plain'
-
-  if File.exist?(file_path)
-    File.read(file_path)
+# Create new file
+post '/new' do
+  if params[:file_name].strip.empty?
+    session[:message] = 'A name is required.'
+    status 422
+    erb :new
   else
-    session[:error] = "#{ params[:file_name] } does not exist."
+    file_path = File.join(data_path, params[:file_name])
+
+    File.write(file_path, "")
+
+    session[:message] = "#{params[:file_name]} was created."
     redirect '/'
   end
+end
+
+# Display file
+get '/:file_name' do
+  file_path = File.join(data_path, params[:file_name])
+
+  if File.exist?(file_path)
+    load_file_content(file_path)
+  else
+    session[:message] = "#{ params[:file_name] } does not exist."
+    redirect '/'
+  end
+end
+
+# Edit file
+get '/:file_name/edit' do
+  file_path = File.join(data_path, params[:file_name])
+
+  if File.exist?(file_path)
+    @filename = params[:file_name]
+    @content = File.read(file_path)
+    erb :edit
+  else
+    session[:message] = "#{ params[:file_name] } does not exist."
+    redirect '/'
+  end
+end
+
+# Update file
+post '/:file_name' do
+  file_path = File.join(data_path, params[:file_name])
+
+  File.write(file_path, params[:content])
+
+  session[:message] = "#{params[:file_name]} has been updated"
+  redirect '/'
 end
