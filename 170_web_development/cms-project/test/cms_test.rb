@@ -142,6 +142,25 @@ class AppTest < Minitest::Test
     assert_includes last_response.body, %q(<button type="submit")
   end
 
+  def test_deleting_doc
+    create_document('changes.txt')
+    create_document('markdown.md')
+    file_path = File.join(data_path, 'changes.txt')
+
+    get '/'
+    assert_includes last_response.body, %q(<button type="submit")
+    assert_includes last_response.body, 'Delete'
+
+    post '/changes.txt/destroy'
+    assert_equal 302, last_response.status
+
+    get last_response["Location"]
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, 'changes.txt has been deleted.'
+    assert_includes last_response.body, 'markdown.md'
+    refute File.exist?(file_path)
+  end
+
   def teardown
     FileUtils.rm_rf(data_path)
   end
