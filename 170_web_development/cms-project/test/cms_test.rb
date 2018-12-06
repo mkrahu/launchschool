@@ -15,6 +15,10 @@ class AppTest < Minitest::Test
     end
   end
 
+  def session
+    last_request.env["rack.session"]
+  end
+
   def setup
     FileUtils.mkdir_p(data_path)
   end
@@ -33,6 +37,11 @@ class AppTest < Minitest::Test
     assert_equal  'text/html;charset=utf-8', last_response['Content-Type']
     assert_includes last_response.body, 'changes.txt'
     assert_includes last_response.body, 'markdown.md'
+    assert_includes last_response.body, %q(<button type="submit")
+    assert_includes last_response.body, 'Delete'
+
+    assert_includes last_response.body, 'New Document'
+    assert_includes last_response.body, 'Sign in'
   end
 
   def test_viewing_text_document
@@ -69,12 +78,7 @@ class AppTest < Minitest::Test
     get '/bad_doc_path.txt'
     assert_equal 302, last_response.status
 
-    get last_response["Location"]
-    assert_equal 200, last_response.status
-    assert_includes last_response.body, 'bad_doc_path.txt does not exist.'
-
-    get '/'
-    refute_includes last_response.body, 'bad_doc_path.txt does not exist.'
+    assert_equal 'bad_doc_path.txt does not exist.', session[:message]
   end
 
   def test_editing_document
@@ -95,10 +99,7 @@ class AppTest < Minitest::Test
     post '/changes.txt', content: 'new content'
 
     assert_equal 302, last_response.status
-
-    get last_response["Location"]
-
-    assert_includes last_response.body, 'changes.txt has been updated'
+    assert_equal 'changes.txt has been updated', session[:message]
 
     get '/changes.txt'
     assert_equal 200, last_response.status
@@ -120,12 +121,7 @@ class AppTest < Minitest::Test
     post '/new', file_name: file_name
 
     assert_equal 302, last_response.status
-
-    get last_response["Location"]
-
-    assert_equal 200, last_response.status
-    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, 'test_new.doc was created.'
+    assert_equal 'test_new.doc was created.', session[:message]
 
     get '/'
     assert_includes last_response.body, 'test_new.doc'
@@ -147,18 +143,51 @@ class AppTest < Minitest::Test
     create_document('markdown.md')
     file_path = File.join(data_path, 'changes.txt')
 
-    get '/'
-    assert_includes last_response.body, %q(<button type="submit")
-    assert_includes last_response.body, 'Delete'
-
     post '/changes.txt/destroy'
     assert_equal 302, last_response.status
+    assert_equal 'changes.txt has been deleted.', session[:message]
+
+    refute File.exist?(file_path)
+  end
+
+  def test_signin_form
+    get '/users/signin'
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, 'Username'
+    assert_includes last_response.body, 'Password'
+    assert_includes last_response.body, %q(<button type="submit")
+    assert_includes last_response.body, 'Sign In'
+  end
+
+  def test_signing_in
+    post '/users/signin', username: 'admin', password: 'secret'
+    assert_equal 302, last_response.status
+    assert_equal 'Welcome!', session[:message]
+    assert_equal 'admin', session[:username]
 
     get last_response["Location"]
-    assert_equal 200, last_response.status
-    assert_includes last_response.body, 'changes.txt has been deleted.'
-    assert_includes last_response.body, 'markdown.md'
-    refute File.exist?(file_path)
+    assert_includes last_response.body, 'Signed in as admin'
+    assert_includes last_response.body, 'Signout'
+  end
+
+  def test_signin_with_bad_credentials
+    post "/users/signin", username: "guest", password: "shhhh"
+    assert_equal 422, last_response.status
+    assert_nil session[:username]
+    assert_includes last_response.body, 'Invalid credentials'
+  end
+
+  def test_signout
+    get '/', {}, { "rack.session" => { username: 'admin' } }
+    assert_includes last_response.body, 'Signed in as admin'
+
+    post '/users/signout'
+    assert_equal 'You have been signed out.', session[:message]
+
+    get last_response['Location']
+    assert_nil session[:username]
+    assert_includes last_response.body, 'Sign in'
   end
 
   def teardown

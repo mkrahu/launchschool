@@ -6,7 +6,3 @@ gem "erubis"
 gem "redcarpet"
 gem "pry"
 gem "minitest"
-
-group :production do
-  gem "puma"
-end
