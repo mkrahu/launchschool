@@ -19,6 +19,10 @@ class AppTest < Minitest::Test
     last_request.env["rack.session"]
   end
 
+  def admin_session
+    { "rack.session" => { username: "admin" } }
+  end
+
   def setup
     FileUtils.mkdir_p(data_path)
   end
@@ -84,7 +88,7 @@ class AppTest < Minitest::Test
   def test_editing_document
     create_document('changes.txt', 'Text to edit')
 
-    get '/changes.txt/edit'
+    get '/changes.txt/edit', {}, admin_session
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
@@ -96,7 +100,7 @@ class AppTest < Minitest::Test
   def test_updating_document
     create_document('changes.txt')
 
-    post '/changes.txt', content: 'new content'
+    post '/changes.txt', { content: 'new content' }, admin_session
 
     assert_equal 302, last_response.status
     assert_equal 'changes.txt has been updated', session[:message]
@@ -107,7 +111,7 @@ class AppTest < Minitest::Test
   end
 
   def test_new_document_form
-    get '/new'
+    get '/new', {}, admin_session
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
@@ -118,7 +122,7 @@ class AppTest < Minitest::Test
   def test_creating_doc
     file_name = 'test_new.doc'
     file_path = File.join(data_path, file_name)
-    post '/new', file_name: file_name
+    post '/new', { file_name: file_name }, admin_session
 
     assert_equal 302, last_response.status
     assert_equal 'test_new.doc was created.', session[:message]
@@ -130,7 +134,7 @@ class AppTest < Minitest::Test
   end
 
   def test_empty_file_name_not_created
-    post '/new', file_name: '      '
+    post '/new', { file_name: '      ' }, admin_session
 
     assert_equal 422, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
@@ -143,7 +147,7 @@ class AppTest < Minitest::Test
     create_document('markdown.md')
     file_path = File.join(data_path, 'changes.txt')
 
-    post '/changes.txt/destroy'
+    post '/changes.txt/destroy', {}, admin_session
     assert_equal 302, last_response.status
     assert_equal 'changes.txt has been deleted.', session[:message]
 

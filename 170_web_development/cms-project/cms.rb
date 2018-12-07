@@ -2,6 +2,8 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'tilt/erubis'
 require 'redcarpet'
+require 'yaml'
+require 'bcrypt'
 require 'pry'
 
 def data_path
@@ -23,6 +25,11 @@ helpers do
   end
 end
 
+def redirect_with_unauthorized_message
+  session[:message] = 'You must be signed in to do that.'
+  redirect '/'
+end
+
 def render_markdown(text)
   markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
   markdown.render(text)
@@ -41,6 +48,20 @@ def load_file_content(file_path)
   end
 end
 
+def load_users
+  credentials_path = if ENV["RACK_ENV"] == "test"
+    File.expand_path("../test/users.yaml", __FILE__)
+  else
+    File.expand_path("../users.yaml", __FILE__)
+  end
+
+  YAML::load_file(credentials_path)
+end
+
+def password_matches?(password, encrypted_password)
+   BCrypt::Password.new(encrypted_password) == password
+end
+
 # Display index page
 get '/' do
   pattern = File.join(data_path, '*')
@@ -51,13 +72,19 @@ get '/' do
   erb :index
 end
 
+
+
 # Render new doc form
 get '/new' do
+  redirect_with_unauthorized_message unless signed_in?
+
   erb :new
 end
 
 # Create new file
 post '/new' do
+  redirect_with_unauthorized_message unless signed_in?
+
   if params[:file_name].strip.empty?
     session[:message] = 'A name is required.'
     status 422
@@ -86,6 +113,8 @@ end
 
 # Edit file
 get '/:file_name/edit' do
+  redirect_with_unauthorized_message unless signed_in?
+
   file_path = File.join(data_path, params[:file_name])
 
   if File.exist?(file_path)
@@ -100,6 +129,8 @@ end
 
 # Update file
 post '/:file_name' do
+  redirect_with_unauthorized_message unless signed_in?
+
   file_path = File.join(data_path, params[:file_name])
 
   File.write(file_path, params[:content])
@@ -110,6 +141,8 @@ end
 
 # Delete file
 post '/:file_name/destroy' do
+  redirect_with_unauthorized_message unless signed_in?
+
   file_name = params[:file_name]
   file_path = File.join(data_path, file_name)
 
@@ -126,7 +159,10 @@ end
 
 # Validate and sign in user
 post '/users/signin' do
-  if params[:username] == 'admin' && params[:password] == 'secret'
+  users = load_users
+  username = params[:username]
+
+  if users[username] && password_matches?(params[:password], users[username]['password'])
     session[:username] = params[:username]
 
     session[:message] = 'Welcome!'
