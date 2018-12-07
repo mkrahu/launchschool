@@ -7,10 +7,10 @@ require 'bcrypt'
 require 'pry'
 
 def data_path
-  if ENV["RACK_ENV"] == "test"
-    File.expand_path("../test/data", __FILE__)
+  if ENV['RACK_ENV'] == 'test'
+    File.expand_path('./test/data', __dir__)
   else
-    File.expand_path("../data", __FILE__)
+    File.expand_path('./data', __dir__)
   end
 end
 
@@ -49,17 +49,24 @@ def load_file_content(file_path)
 end
 
 def load_users
-  credentials_path = if ENV["RACK_ENV"] == "test"
-    File.expand_path("../test/users.yaml", __FILE__)
-  else
-    File.expand_path("../users.yaml", __FILE__)
-  end
+  users_path = if ENV['RACK_ENV'] == 'test'
+                 File.expand_path('./test/users.yaml', __dir__)
+               else
+                 File.expand_path('./users.yaml', __dir__)
+               end
 
-  YAML::load_file(credentials_path)
+  YAML.load_file(users_path)
 end
 
-def password_matches?(password, encrypted_password)
-   BCrypt::Password.new(encrypted_password) == password
+def password_matches?(username, password)
+  users = load_users
+
+  if users[username]
+    encrypted_password = users[username]['password']
+    BCrypt::Password.new(encrypted_password) == password
+  else
+    false
+  end
 end
 
 # Display index page
@@ -71,8 +78,6 @@ get '/' do
 
   erb :index
 end
-
-
 
 # Render new doc form
 get '/new' do
@@ -106,7 +111,7 @@ get '/:file_name' do
   if File.exist?(file_path)
     load_file_content(file_path)
   else
-    session[:message] = "#{ params[:file_name] } does not exist."
+    session[:message] = "#{params[:file_name]} does not exist."
     redirect '/'
   end
 end
@@ -122,7 +127,7 @@ get '/:file_name/edit' do
     @content = File.read(file_path)
     erb :edit
   else
-    session[:message] = "#{ params[:file_name] } does not exist."
+    session[:message] = "#{params[:file_name]} does not exist."
     redirect '/'
   end
 end
@@ -130,7 +135,6 @@ end
 # Update file
 post '/:file_name' do
   redirect_with_unauthorized_message unless signed_in?
-
   file_path = File.join(data_path, params[:file_name])
 
   File.write(file_path, params[:content])
@@ -159,10 +163,9 @@ end
 
 # Validate and sign in user
 post '/users/signin' do
-  users = load_users
   username = params[:username]
 
-  if users[username] && password_matches?(params[:password], users[username]['password'])
+  if password_matches?(username, params[:password])
     session[:username] = params[:username]
 
     session[:message] = 'Welcome!'
