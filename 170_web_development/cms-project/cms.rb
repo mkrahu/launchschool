@@ -23,6 +23,10 @@ helpers do
   def signed_in?
     session[:username]
   end
+
+  def dup_doc_filename(file_name)
+    "#{File.basename(file_name, '.*')}_v2#{File.extname(file_name)}"
+  end
 end
 
 def redirect_with_unauthorized_message
@@ -154,6 +158,34 @@ post '/:file_name/destroy' do
 
   session[:message] = "#{file_name} has been deleted."
   redirect '/'
+end
+
+# Duplicate file form
+get '/:file_name/duplicate' do
+  redirect_with_unauthorized_message unless signed_in?
+
+  erb :duplicate
+end
+
+# Create duplicate file
+post '/:file_name/duplicate' do
+  redirect_with_unauthorized_message unless signed_in?
+
+  file_name = params[:file_name]
+  destination_name = params[:dup_file_name].strip
+
+  if destination_name == params[:file_name]
+    session[:message] = 'You cannot name duplicate file the same as the current file.'
+    erb :duplicate
+  else
+    copy_file = File.join(data_path, file_name)
+    destination = File.join(data_path, destination_name)
+
+    FileUtils.cp copy_file, destination
+
+    session[:message] = "#{file_name} has been copied to #{destination_name}"
+    redirect '/'
+  end
 end
 
 # Render signin page

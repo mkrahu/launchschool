@@ -183,7 +183,7 @@ class AppTest < Minitest::Test
   end
 
   def test_signout
-    get '/', {}, { "rack.session" => { username: 'admin' } }
+    get '/', {}, admin_session
     assert_includes last_response.body, 'Signed in as admin'
 
     post '/users/signout'
@@ -192,6 +192,24 @@ class AppTest < Minitest::Test
     get last_response['Location']
     assert_nil session[:username]
     assert_includes last_response.body, 'Sign in'
+  end
+
+  def test_duplicate_form
+    create_document('changes.txt')
+
+    get '/changes.txt/duplicate', {}, admin_session
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, 'Enter new name for duplicate document'
+    assert_includes last_response.body, '<button type="submit">Create duplicate</button>'
+  end
+
+  def test_duplicate_document
+    create_document('changes.txt')
+
+    post '/changes.txt/duplicate', { dup_file_name: 'changes_v2.txt' }, admin_session
+    assert_equal 302, last_response.status
+    assert_equal 'changes.txt has been copied to changes_v2.txt', session[:message]
+    File.exist?(File.join(data_path, 'changes_v2.txt'))
   end
 
   def teardown

@@ -1,0 +1,8 @@
+<form method="post" action="/<%= params[:file_name] %>/duplicate">
+  <label for="dup_file_name">Enter new name for duplicate document:</label>
+  <div>
+    <input name="dup_file_name" id="dup_file_name" type="text"
+           value="<%= dup_doc_filename(params[:file_name]) %>">
+  <button type="submit">Create duplicate</button>
+  </div>
+</form>
