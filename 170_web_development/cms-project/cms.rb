@@ -14,6 +14,14 @@ def data_path
   end
 end
 
+def users_path
+ if ENV['RACK_ENV'] == 'test'
+   File.expand_path('./test/users.yaml', __dir__)
+ else
+   File.expand_path('./users.yaml', __dir__)
+ end
+end
+
 configure do
   enable :sessions
   set :session_secret, 'secret'
@@ -53,13 +61,17 @@ def load_file_content(file_path)
 end
 
 def load_users
-  users_path = if ENV['RACK_ENV'] == 'test'
-                 File.expand_path('./test/users.yaml', __dir__)
-               else
-                 File.expand_path('./users.yaml', __dir__)
-               end
-
   YAML.load_file(users_path)
+end
+
+def add_user(username, password)
+  users = load_users
+
+  password_hash = BCrypt::Password.create(password).to_s
+  users[username] = { 'password' => password_hash}
+
+  updated_users = YAML.dump(users)
+  File.write(users_path, updated_users)
 end
 
 def password_matches?(username, password)
@@ -71,6 +83,26 @@ def password_matches?(username, password)
   else
     false
   end
+end
+
+def validate_user_signup(username, password, confirm_password)
+  errors = []
+  users = load_users
+
+  # Validate username
+  if username.strip.empty?
+    errors << 'Username must not be blank'
+  elsif users.keys.include?(username)
+    errors << 'Username is unavailable, please pick a new username'
+  elsif username.length > 20
+    errors << 'Username must be 20 characters or less'
+  end
+
+  if password != confirm_password
+    errors << 'Passwords provided do not match'
+  end
+
+  errors
 end
 
 # Display index page
@@ -175,7 +207,8 @@ post '/:file_name/duplicate' do
   destination_name = params[:dup_file_name].strip
 
   if destination_name == params[:file_name]
-    session[:message] = 'You cannot name duplicate file the same as the current file.'
+    session[:message] = 'You cannot name duplicate file the same name as the current file.'
+    status 422
     erb :duplicate
   else
     copy_file = File.join(data_path, file_name)
@@ -215,4 +248,29 @@ post '/users/signout' do
 
   session[:message] = 'You have been signed out.'
   redirect '/'
+end
+
+# Signup user
+get '/users/signup' do
+  erb :signup
+end
+
+# Validate and create user after signup
+post '/users/signup' do
+  username = params[:username]
+  password = params[:password]
+  confirm_password = params[:confirm_password]
+
+  errors = validate_user_signup(username, password, confirm_password)
+  if errors.empty?
+    add_user(username, password)
+    session[:username] = username
+
+    session[:message] = "Welcome to the CMS site, #{username}!"
+    redirect '/'
+  else
+    session[:message] = errors.join(', ')
+    status 422
+    erb :signup
+  end
 end

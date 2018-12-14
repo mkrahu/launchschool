@@ -23,8 +23,14 @@ class AppTest < Minitest::Test
     { "rack.session" => { username: "admin" } }
   end
 
+  def setup_users
+    users = { 'admin' => { 'password' => "$2a$10$mvlqgsG/PdZ1cztgF2o1GOCCPFrpWRa0H8gi0hJ6u4.V.4KjFWFX." } }
+    File.write(users_path, YAML.dump(users))
+  end
+
   def setup
     FileUtils.mkdir_p(data_path)
+    setup_users
   end
 
   def app
@@ -212,7 +218,39 @@ class AppTest < Minitest::Test
     File.exist?(File.join(data_path, 'changes_v2.txt'))
   end
 
+  def test_cannot_duplicate_to_original_filename
+    create_document('changes.txt')
+    error_message = 'You cannot name duplicate file the same name as the current file.'
+
+    post '/changes.txt/duplicate', { dup_file_name: 'changes.txt' }, admin_session
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, error_message
+  end
+
+  def test_signup_form
+    get '/users/signup'
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, 'Username'
+    assert_includes last_response.body, 'Password'
+    assert_includes last_response.body, 'Confirm Password'
+    assert_includes last_response.body, '<button type="submit">Sign Up</button>'
+  end
+
+  def test_user_signup
+    post '/users/signup', { username: 'test',
+                            password: 'password',
+                            confirm_password: 'password' }
+
+
+    assert_equal 302, last_response.status
+    assert_equal 'Welcome to the CMS site, test!', session[:message]
+
+    load_users.keys.include?('test')
+  end
+
   def teardown
     FileUtils.rm_rf(data_path)
+    FileUtils.rm_rf(users_path)
   end
 end

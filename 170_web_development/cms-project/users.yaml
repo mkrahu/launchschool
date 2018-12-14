@@ -1,4 +1,7 @@
+---
 admin:
-  password: $2a$10$mvlqgsG/PdZ1cztgF2o1GOCCPFrpWRa0H8gi0hJ6u4.V.4KjFWFX.
+  password: "$2a$10$mvlqgsG/PdZ1cztgF2o1GOCCPFrpWRa0H8gi0hJ6u4.V.4KjFWFX."
 mkrahu:
-  password: $2a$10$odJoKR.fpGX.Nlv1ImbGeew7gy.W0QAx6wrdkaouSFOqbdEWWIgre
+  password: "$2a$10$odJoKR.fpGX.Nlv1ImbGeew7gy.W0QAx6wrdkaouSFOqbdEWWIgre"
+test:
+  password: "$2a$10$hY3E5PnCU9vSBJbeLPs/3etzUXFwf9FoG2/WB/P0BCImwhx9FuhAG"
