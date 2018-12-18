@@ -1,0 +1,21 @@
+<! doctype html>
+<html lang="en-US">
+  <head>
+    <title>Quotes</title>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <% if session[:error] %>
+      <ul>
+        <% session[:error].each do |error| %>
+          <li><%= error%></li>
+        <% end %>
+        <% session.delete(:error) %>
+      </ul>
+    <% end %>
+    <% if session[:message] %>
+      <%= session.delete(:message) %>
+    <% end %>
+    <%== yield %>
+  </body>
+</html>
