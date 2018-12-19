@@ -9,4 +9,12 @@
   </ul>
 <% end %>
 <p><a href="/quote/new">Create New Quote</a></p>
-<p><a href="/user/signin">Sign In</a> | <a href="/user/new">Sign up </a>
+<p>
+  <% if signed_in? %>
+    <form action="/user/signout" method="post">
+      <button type="submit">Sign out</button>
+    </form>
+  <% else %>
+    <a href="/user/signin">Sign In</a> | <a href="/user/new">Sign up </a>
+  <% end %>
+</p>

@@ -2,6 +2,7 @@ ENV["RACK_ENV"] = "test"
 
 require 'minitest/autorun'
 require 'rack/test'
+require 'fileutils'
 
 require_relative '../quotes'
 
@@ -10,6 +11,21 @@ class QuotesTest < Minitest::Test
 
   def app
     Sinatra::Application
+  end
+
+  def setup
+    setup_test_users
+  end
+
+  def teardown
+    FileUtils.remove_file(users_path)
+  end
+
+  def setup_test_users
+    users = { 'test' =>
+                { 'password' => '$2a$10$nSz/hWkRaAMXQvIPEkrwqOTdZOOQNPj1VRWEgOKJUoFME7zpqFB7m'} }
+    users = YAML.dump(users)
+    File.write(users_path, users)
   end
 
   def session
@@ -55,6 +71,41 @@ class QuotesTest < Minitest::Test
     assert 302, last_response.status
     assert_equal 'You added a quote!', session[:message]
     assert_includes last_response["Location"], '/quotes'
+  end
+
+  def test_signup_form
+    get '/user/new'
+
+    assert 200, last_response.status
+    assert_includes last_response.body, 'input name="username"'
+    assert_includes last_response.body, 'input name="password"'
+    assert_includes last_response.body, 'input name="confirm"'
+    assert_includes last_response.body, '<button type="submit">'
+  end
+
+  def test_signup_user
+    post '/user/new', { username: 'admin', password: 'pass', confirm: 'pass' }
+    users = load_users
+
+    assert 302, last_response.status
+    assert_equal 'admin', session[:username]
+    assert_includes users.keys, 'admin'
+  end
+
+  def test_signin_form
+    get '/user/signin'
+
+    assert 200, last_response.status
+    assert_includes last_response.body, 'input name="username"'
+    assert_includes last_response.body, 'input name="password"'
+    assert_includes last_response.body, '<button type="submit">'
+  end
+
+  def test_signin_user
+    post '/user/signin', { username: 'test', password: 'test' }
+
+    assert 302, last_response.status
+    assert_equal 'test', session[:username]
   end
 end
 
