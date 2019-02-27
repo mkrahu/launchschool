@@ -8,12 +8,23 @@ require 'io/console'
 class ExpensesData
   def initialize(dbname)
     @connection = PG.connect(dbname: dbname)
+    setup_schema
+  end
+
+  def setup_schema
+    sql = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'expenses';"
+    count = connection.exec(sql).tuple_values(0).first.to_i
+    if count.zero?
+      sql = File.read('./schema.sql')
+      connection.exec(sql)
+    end
   end
 
   def list_expenses
     result = connection.exec('SELECT * FROM expenses;')
 
-    display(result)
+    display_count(result)
+    display_result(result) if result.ntuples > 0
   end
 
   def add_expense(amount, memo, date = Date.today)
@@ -23,8 +34,11 @@ class ExpensesData
 
   def search_expenses(criteria)
     sql = "SELECT * FROM expenses WHERE memo ILIKE $1"
+
     result =  connection.exec_params(sql, ["%#{criteria}%"])
-    display(result)
+
+    display_count(result)
+    display_result(result) if result.ntuples > 0
   end
 
   def delete_expense(id)
@@ -38,7 +52,7 @@ class ExpensesData
       connection.exec_params(sql, [id])
 
       puts "The following expense has been deleted:"
-      display(result)
+      display_result(result)
     end
   end
 
@@ -50,12 +64,27 @@ class ExpensesData
   private
   attr_reader :connection
 
-  def display(result)
+  def display_count(result)
+    count = result.ntuples
+
+    if count.zero?
+      puts "There are no expenses."
+    else
+      puts "There are #{count} expenses."
+    end
+  end
+
+  def display_result(result)
     puts result.fields.join(' | ')
 
     result.each do |tuple|
       puts tuple.values.join(' | ')
     end
+
+    total = result.field_values('amount').map(&:to_f).inject(:+)
+
+    puts "-" * 40
+    puts "Total: #{total}" #format total
   end
 end
 
