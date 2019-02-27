@@ -3,6 +3,7 @@
 require 'pg'
 require 'date'
 require 'pry'
+require 'io/console'
 
 class ExpensesData
   def initialize(dbname)
@@ -24,6 +25,26 @@ class ExpensesData
     sql = "SELECT * FROM expenses WHERE memo ILIKE $1"
     result =  connection.exec_params(sql, ["%#{criteria}%"])
     display(result)
+  end
+
+  def delete_expense(id)
+    sql = "SELECT * FROM expenses WHERE id = $1"
+    result = connection.exec_params(sql, [id])
+
+    if result.num_tuples.zero?
+      puts "There is no expense with the id '#{id}'."
+    else
+      sql = "DELETE FROM expenses WHERE id = $1"
+      connection.exec_params(sql, [id])
+
+      puts "The following expense has been deleted:"
+      display(result)
+    end
+  end
+
+  def delete_all_expenses
+    sql = "DELETE FROM expenses;"
+    connection.exec(sql)
   end
 
   private
@@ -55,12 +76,23 @@ class CLI
         puts 'You must provide an amount and memo.'
       end
     when 'search'
-      criteria = args[0]
+      criteria = args.first
       if criteria
         expenses.search_expenses(criteria)
       else
          puts 'You must provide search criteria.'
        end
+    when 'delete'
+      id = args.first
+      expenses.delete_expense(id)
+    when 'clear'
+      puts "This will remove all expenses. Are you sure? (y/n)"
+      answer = $stdin.getch
+
+      if answer == 'y'
+        expenses.delete_all_expenses
+        puts "All expenses have been deleted."
+      end
     else
       display_help
     end
