@@ -143,6 +143,8 @@ end
 
 # Edit an existing list
 post '/lists/:list_id' do
+  @list_id = params[:list_id].to_i
+  @list = load_list(@list_id)
   list_name = params[:list_name].strip
 
   error = error_in_list_name(list_name)
@@ -150,10 +152,10 @@ post '/lists/:list_id' do
     session[:error] = error
     erb :edit_list, layout: :layout
   else
-    session[:lists][@list_id][:name] = list_name
+    @list[:name] = list_name
     session[:success] = 'The list has been updated.'
 
-    redirect "lists/#{index}"
+    redirect "lists/#{@list_id}"
   end
 end
 
